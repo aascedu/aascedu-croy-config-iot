@@ -1,0 +1,80 @@
+# This is the manifest file for the app
+# It contains the deployment, service and ingress of the app
+# ==========================================================
+
+# The namepace of the app
+
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: dev
+---
+# Deployment of the app
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    namespace: 'dev'
+    labels:
+        app: app
+    name: app
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: app
+    strategy: {}
+    template:
+        metadata:
+            namespace: 'dev'
+            labels:
+                app: app
+        spec:
+            containers:
+                - image: wil42/playground:v1
+                  name: app
+                  resources:
+                      limits:
+                          cpu: '0.5'
+                          memory: '512Mi'
+---
+# Service of the app
+
+apiVersion: v1
+kind: Service
+metadata:
+    namespace: 'dev'
+    labels:
+        app: app
+    name: app
+spec:
+    ports:
+        - name: 80-80
+          port: 80
+          protocol: TCP
+          targetPort: 8888
+    selector:
+        app: app
+    type: ClusterIP
+
+---
+# Ingress of the app
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    namespace: 'dev'
+    name: app
+    annotations:
+        ingress.kubernetes.io/ssl-redirect: 'false' # Because the app is not using HTTPS
+spec:
+    rules:
+        - http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: app
+                            port:
+                                number: 80
